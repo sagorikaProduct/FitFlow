@@ -11,10 +11,6 @@ It includes a workout generator, exercise library, timer, and progress tracker.
 - Hosted on **GitHub Pages** for easy access
 
 ## 🌐 Live Demo
-👉 [FitFlow on GitHub Pages](https://<your-username>.github.io/FitFlow/)
+👉 [FitFlow on GitHub Pages](https://sagorikaProduct.github.io/FitFlow/)
 
-## 📂 How to Run Locally
-```bash
-git clone https://github.com/<your-username>/FitFlow.git
-cd FitFlow
-open index.html   # or double-click it
+
