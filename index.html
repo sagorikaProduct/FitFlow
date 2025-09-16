@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>FitFlow | AI-Powered Workout Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        html { scroll-behavior: smooth; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh; color: #e2e8f0; padding-bottom: 60px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        .navbar { background: rgba(15,15,35,0.96); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04); padding:1rem 0; position: sticky; top:0; z-index:1000; }
+        .nav-content { display:flex; justify-content:space-between; align-items:center; }
+        .logo { font-size:1.6rem; font-weight:800; background: linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .nav-links { display:flex; gap:2rem; list-style:none; }
+        .nav-links a { color:#cbd5e0; text-decoration:none; font-weight:600; padding:.25rem .5rem; border-radius:6px; }
+        .nav-links a:focus, .nav-links a:hover { color:#fff; background: rgba(255,255,255,0.03); }
+        .hero { text-align:center; padding:3.2rem 0; background: linear-gradient(135deg, rgba(102,126,234,0.04), rgba(118,75,162,0.04)); margin:1.25rem 0; border-radius: 12px; }
+        .hero h1 { font-size:2.2rem; font-weight:900; margin-bottom:.6rem; background: linear-gradient(135deg,#fff,#cbd5e0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .hero p { font-size:.98rem; color:#a0aec0; max-width:820px; margin:0 auto 1rem; line-height:1.6; }
+        .cta-button { background: linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding: .7rem 1.2rem; border-radius: 50px; font-size:.95rem; font-weight:600; cursor:pointer; }
+        .workout-builder { display:grid; grid-template-columns: 1fr 2fr; gap:2rem; margin-bottom:2rem; align-items:start; }
+        .controls-panel { background: rgba(26,32,44,0.8); backdrop-filter: blur(12px); border:1px solid rgba(255,255,255,0.04); border-radius:18px; padding:1.3rem; position: sticky; top:86px; }
+        .section-title { font-size:1.05rem; font-weight:700; color:#f7fafc; display:flex; align-items:center; gap:.6rem; margin-bottom:.8rem; }
+        .options-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .6rem; }
+        .option-card { background: rgba(45,55,72,0.6); border-radius:12px; padding:.9rem; text-align:center; cursor:pointer; user-select:none; border: 1px solid rgba(255,255,255,0.03); transition: transform .15s ease, box-shadow .15s ease; }
+        .option-card.selected { transform: translateY(-4px); box-shadow: 0 8px 22px rgba(0,0,0,0.25); border-color: rgba(102,126,234,0.24); background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.06)); }
+        .generate-btn { background: linear-gradient(135deg,#48bb78,#38a169); color:white; border:none; border-radius:50px; padding: 0.75rem 1rem; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-top: .6rem; }
+        .workout-display { min-height: 360px; }
+        .workout-results { background: rgba(26,32,44,0.8); backdrop-filter: blur(12px); border-radius:12px; padding:1rem; border:1px solid rgba(255,255,255,0.04); display:block; }
+        .workout-header { margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:.75rem; }
+        .workout-stats { display:grid; grid-template-columns: repeat(auto-fit,minmax(100px,1fr)); gap:.5rem; margin-top:.6rem; }
+        .stat-card { background: rgba(45,55,72,0.6); border-radius:8px; padding:.5rem; text-align:center; }
+        .stat-value { font-size:1.05rem; font-weight:700; color:#67a7ff; }
+        .exercise-card { background: rgba(45,55,72,0.6); border:1px solid rgba(255,255,255,0.04); border-radius:12px; margin-bottom:1rem; padding:1rem; display:flex; gap:1rem; align-items:flex-start; }
+        .exercise-thumb { width:220px; max-width:34%; min-width:160px; background:linear-gradient(135deg,#2d3748,#4a5568); border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; color:#a0aec0; }
+        .svg-wrap { width:100%; height:100px; display:flex; align-items:center; justify-content:center; }
+        .exercise-info { flex:1; }
+        .exercise-name { font-size:1.05rem; font-weight:700; color:#f7fafc; margin-bottom:.3rem; }
+        .exercise-meta { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.6rem; }
+        .meta-item { background: rgba(102,126,234,0.08); padding:.35rem .6rem; border-radius:999px; font-size:.82rem; color:#cbd5e0; }
+        .exercise-description { color:#cbd5e0; line-height:1.45; margin-bottom:.6rem; font-size:.95rem; }
+        .exercise-tips { background: rgba(72,187,120,0.06); border-left:4px solid #48bb78; padding: .6rem .9rem; border-radius:6px; color:#cbd5e0; margin-top:.6rem; }
+        .tips-list { list-style:none; padding-left:1rem; }
+        .tips-list li { margin-bottom:.2rem; position:relative; padding-left:1rem; }
+        .tips-list li::before { content:'→'; position:absolute; left:0; color:#48bb78; }
+        .workout-timer { background: linear-gradient(135deg,#667eea,#764ba2); border-radius:10px; padding:.9rem; margin-top:1rem; color:white; }
+        .timer-display { font-size:1.6rem; font-weight:900; font-family:'Courier New', monospace; text-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+        .timer-controls { display:flex; gap:.6rem; margin-top:.6rem; flex-wrap:wrap; }
+        .timer-btn { background: rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.14); color:white; border-radius:30px; padding:.45rem .75rem; cursor:pointer; font-weight:700; }
+        .progress-tracker { background: rgba(45,55,72,0.6); border-radius:10px; padding:.6rem; margin-top: .8rem; }
+        .progress-bar { width:100%; height:8px; background: rgba(255,255,255,0.08); border-radius:999px; overflow:hidden; margin: .5rem 0; }
+        .progress-fill { height:100%; background: linear-gradient(90deg,#48bb78,#38a169); width:0%; transition: width .28s ease; }
+        .exercise-complete-btn { background: linear-gradient(135deg,#48bb78,#38a169); color:white; border:none; border-radius:8px; padding:.45rem .75rem; cursor:pointer; font-weight:600; }
+        .exercise-complete-btn.completed { background:#4a5568; cursor:not-allowed; }
+        .section-block { background: rgba(26,32,44,0.7); border-radius:12px; padding:1rem; margin-bottom:1.25rem; border:1px solid rgba(255,255,255,0.03); }
+        h2.section-head { margin-bottom:.6rem; font-size:1.2rem; color:#e6eefc; }
+        @media (max-width: 1024px) {
+            .workout-builder { grid-template-columns: 1fr; }
+            .controls-panel { position:static; }
+            .exercise-thumb { max-width:40%; }
+        }
+        @media (max-width: 640px) {
+            .exercise-card { flex-direction:column; }
+            .exercise-thumb { width:100%; min-width:auto; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" role="navigation" aria-label="Main Navigation">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">FitFlow</div>
+                <ul class="nav-links" role="menubar">
+                    <li role="none"><a role="menuitem" href="#builder">Workout Builder</a></li>
+                    <li role="none"><a role="menuitem" href="#exercises">Exercises</a></li>
+                    <li role="none"><a role="menuitem" href="#progress">Progress</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="hero" aria-label="Intro">
+            <h1>AI-Powered Workouts</h1>
+            <p>Create personalized workout routines with video demonstrations, expert guidance, and real-time progress tracking. No guesswork, just results.</p>
+            <button class="cta-button" onclick="document.querySelector('[href=\"#builder\"]').click()">Start Your Journey</button>
+        </section>
+
+        <!-- BUILDER -->
+        <section id="builder" class="workout-builder" aria-labelledby="builderHeading">
+            <div class="controls-panel">
+                <div class="control-section">
+                    <h3 class="section-title" id="builderHeading"><i class="fa-solid fa-dumbbell section-icon" aria-hidden="true"></i>Available Equipment</h3>
+                    <div class="options-grid" id="equipmentGrid">
+                        <div class="option-card" data-equipment="bodyweight"><i class="fa-solid fa-running option-icon" aria-hidden="true"></i><div class="option-label">Bodyweight</div></div>
+                        <div class="option-card" data-equipment="dumbbells"><i class="fa-solid fa-dumbbell option-icon" aria-hidden="true"></i><div class="option-label">Dumbbells</div></div>
+                        <div class="option-card" data-equipment="barbell"><i class="fa-solid fa-weight-hanging option-icon" aria-hidden="true"></i><div class="option-label">Barbell</div></div>
+                        <div class="option-card" data-equipment="resistance-bands"><i class="fa-solid fa-bolt option-icon" aria-hidden="true"></i><div class="option-label">Bands</div></div>
+                        <div class="option-card" data-equipment="pull-up-bar"><i class="fa-solid fa-person-chalkboard option-icon" aria-hidden="true"></i><div class="option-label">Pull-up Bar</div></div>
+                        <div class="option-card" data-equipment="kettlebell"><i class="fa-solid fa-kettlebell option-icon" aria-hidden="true"></i><div class="option-label">Kettlebell</div></div>
+                    </div>
+                </div>
+
+                <div class="control-section" style="margin-top:1rem;">
+                    <h3 class="section-title"><i class="fa-solid fa-bullseye section-icon" aria-hidden="true"></i>Target Muscles</h3>
+                    <div class="options-grid" id="muscleGrid">
+                        <div class="option-card" data-muscle="chest"><i class="fa-solid fa-heart option-icon" aria-hidden="true"></i><div class="option-label">Chest</div></div>
+                        <div class="option-card" data-muscle="back"><i class="fa-solid fa-arrow-up-right-dots option-icon" aria-hidden="true"></i><div class="option-label">Back</div></div>
+                        <div class="option-card" data-muscle="shoulders"><i class="fa-solid fa-arrows-up-to-line option-icon" aria-hidden="true"></i><div class="option-label">Shoulders</div></div>
+                        <div class="option-card" data-muscle="arms"><i class="fa-solid fa-hand-rock option-icon" aria-hidden="true"></i><div class="option-label">Arms</div></div>
+                        <div class="option-card" data-muscle="legs"><i class="fa-solid fa-shoe-prints option-icon" aria-hidden="true"></i><div class="option-label">Legs</div></div>
+                        <div class="option-card" data-muscle="core"><i class="fa-solid fa-bullseye option-icon" aria-hidden="true"></i><div class="option-label">Core</div></div>
+                    </div>
+                </div>
+
+                <div class="control-section" style="margin-top:1rem;">
+                    <h3 class="section-title"><i class="fa-solid fa-bolt section-icon" aria-hidden="true"></i>Difficulty Level</h3>
+                    <div class="difficulty-slider">
+                        <div class="slider-container">
+                            <input type="range" min="1" max="5" value="3" class="slider" id="difficultySlider" aria-label="Difficulty">
+                        </div>
+                        <div style="display:flex; justify-content:space-between; color:#a0aec0; font-size:.9rem; margin-top:.45rem;">
+                            <span>Beginner</span>
+                            <span>Expert</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="generate-section" style="margin-top:1rem;">
+                    <button class="generate-btn" id="generateBtn">Generate AI Workout</button>
+                </div>
+            </div>
+
+            <div class="workout-display">
+                <div class="workout-results" id="workoutResults" aria-live="polite">
+                    <div class="workout-header">
+                        <h2 class="section-head"><i class="fa-solid fa-clipboard-list section-icon" aria-hidden="true"></i> Your Custom Workout Plan</h2>
+                        <div class="workout-stats" id="workoutStats">
+                            <div class="stat-card"><div class="stat-value" id="totalExercises">0</div><div class="stat-label">Exercises</div></div>
+                            <div class="stat-card"><div class="stat-value" id="estimatedTime">0</div><div class="stat-label">Minutes</div></div>
+                            <div class="stat-card"><div class="stat-value" id="totalSets">0</div><div class="stat-label">Total Sets</div></div>
+                            <div class="stat-card"><div class="stat-value" id="difficultyLevel">3</div><div class="stat-label">Difficulty</div></div>
+                        </div>
+
+                        <div class="progress-tracker" style="margin-top:.8rem;">
+                            <div>Workout Progress</div>
+                            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                            <div id="progressText">0% Complete</div>
+                        </div>
+                    </div>
+
+                    <div id="exerciseList"></div>
+
+                    <div class="workout-timer" style="margin-top:.6rem;">
+                        <h3 style="margin-bottom:.45rem;">Workout Timer</h3>
+                        <div class="timer-display" id="timerDisplay">00:00</div>
+                        <div class="timer-controls">
+                            <button class="timer-btn" id="startBtn">▶ Start</button>
+                            <button class="timer-btn" id="pauseBtn">⏸ Pause</button>
+                            <button class="timer-btn" id="resetBtn">⏹ Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXERCISES PAGE SECTION -->
+        <section id="exercises" class="section-block" aria-labelledby="exercisesHeading">
+            <h2 class="section-head" id="exercisesHeading"><i class="fa-solid fa-book-open-reader section-icon" aria-hidden="true"></i> Exercises Library</h2>
+            <p style="color:#a0aec0; margin-bottom:.8rem;">Below is a quick library of bodyweight exercises (demo).  
+These will be included when you generate a workout.</p>
+            <div id="allExercisesList"></div>
+        </section>
+
+        <!-- PROGRESS PAGE SECTION -->
+        <section id="progress" class="section-block" aria-labelledby="progressHeading">
+            <h2 class="section-head" id="progressHeading"><i class="fa-solid fa-chart-line section-icon" aria-hidden="true"></i> Your Progress</h2>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <div class="stat-card" style="min-width:140px;">
+                    <div class="stat-value" id="progressTotalExercises">0</div>
+                    <div class="stat-label">Exercises</div>
+                </div>
+                <div class="stat-card" style="min-width:140px;">
+                    <div class="stat-value" id="progressEstimatedTime">0</div>
+                    <div class="stat-label">Minutes</div>
+                </div>
+                <div class="stat-card" style="min-width:140px;">
+                    <div class="stat-value" id="progressTotalSets">0</div>
+                    <div class="stat-label">Total Sets</div>
+                </div>
+                <div class="stat-card" style="min-width:140px;">
+                    <div class="stat-value" id="progressDifficulty">3</div>
+                    <div class="stat-label">Difficulty</div>
+                </div>
+            </div>
+
+            <div style="margin-top:.9rem;">
+                <div>Overall Workout Progress</div>
+                <div class="progress-bar" style="margin-top:.5rem;"><div class="progress-fill" id="globalProgressFill"></div></div>
+                <div id="globalProgressText">0% Complete</div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        /* ====== Helpers & Data ====== */
+        function escapeHtml(s){ return String(s || '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+        function generateId() { return Math.random().toString(36).slice(2,9); }
+        function capitalize(s){ return String(s||'').charAt(0).toUpperCase() + String(s||'').slice(1); }
+
+        const exerciseDatabase = {
+            bodyweight: {
+                chest: [
+                    { name: 'Push-ups', description: 'Targets chest, shoulders, triceps and core.', instructions: 'Start in plank, lower until chest near floor, push back up.', tips:['Keep core tight','Prioritize form over reps'], difficulty:2, primary:'Chest', secondary:['Shoulders','Triceps'] },
+                    { name: 'Diamond Push-ups', description: 'Emphasizes triceps and inner chest.', instructions: 'Hands form a diamond under chest, keep elbows close.', tips:['Use knee variation if needed'], difficulty:4, primary:'Triceps', secondary:['Chest'] }
+                ],
+                back: [
+                    { name: 'Superman', description:'Strengthens lower back & glutes.', instructions:'Lie face down and lift chest & legs together, squeeze glutes at top.', tips:['Squeeze glutes at top','Control the descent'], difficulty:2, primary:'Lower Back', secondary:['Glutes']},
+                    { name: 'Reverse Snow Angels', description:'Targets upper back and rear delts.', instructions:'Face down, sweep arms slowly overhead keeping chest close to floor.', tips:['Control motion','Slow tempo'], difficulty:3, primary:'Upper Back', secondary:['Rear Delts'] }
+                ],
+                legs: [
+                    { name:'Squats', description:'Quads, glutes, hamstrings.', instructions:'Push hips back as if sitting on a chair, then stand.', tips:['Chest up','Knees track toes'], difficulty:1, primary:'Quadriceps', secondary:['Glutes']},
+                    { name:'Jump Squats', description:'Explosive power and cardio.', instructions:'Perform a squat and explode upward into a jump; land softly.', tips:['Land softly','Maintain form'], difficulty:3, primary:'Quads', secondary:['Glutes'] }
+                ],
+                core: [
+                    { name:'Plank', description:'Isometric core stability.', instructions:'Hold a straight line on forearms/toes, avoid hips sagging.', tips:['Keep hips level','Breathe normally'], difficulty:2, primary:'Core', secondary:['Shoulders']},
+                    { name:'Mountain Climbers', description:'Core + cardio', instructions:'Alternately drive knees to chest from plank position.', tips:['Keep hips stable'], difficulty:3, primary:'Core', secondary:['Shoulders'] }
+                ],
+                shoulders: [
+                    { name:'Pike Push-ups', description:'Targets shoulders and upper chest.', instructions:'Hips high, lower head toward floor then push up.', tips:['Start with incline variation if needed'], difficulty:3, primary:'Shoulders', secondary:['Chest']},
+                    { name:'Arm Circles', description:'Warm-up and endurance for delts.', instructions:'Small to large circles, controlled tempo.', tips:['Start small then increase size'], difficulty:1, primary:'Shoulders', secondary:[] }
+                ],
+                arms: [
+                    { name:'Triceps Dips (chair)', description:'Triceps-focused dip using a chair.', instructions:'Hands on chair edge, lower hips to about 90°, then push up.', tips:['Keep elbows back','Use feet to reduce load'], difficulty:3, primary:'Triceps', secondary:['Shoulders']},
+                    { name:'Chin-up Negatives', description:'Strengthen biceps/back with slow negatives.', instructions:'Jump to top of chin-up and lower slowly for 3-5s.', tips:['Control the descent','Breathe'], difficulty:4, primary:'Biceps', secondary:['Back'] }
+                ]
+            },
+            dumbbells: {}, barbell:{}, kettlebell:{}, 'resistance-bands':{}, 'pull-up-bar':{}
+        };
+
+        // Fill equipment fallback pools
+        Object.keys(exerciseDatabase).forEach(eq => {
+            if (eq === 'bodyweight') return;
+            for (const m of Object.keys(exerciseDatabase.bodyweight)) {
+                exerciseDatabase[eq][m] = exerciseDatabase.bodyweight[m].map(ex => {
+                    const copy = JSON.parse(JSON.stringify(ex));
+                    if (eq === 'dumbbells') { copy.name = copy.name.includes('Push-ups') ? copy.name.replace('Push-ups','Dumbbell Floor Press') : copy.name + ' (DB)'; copy.difficulty = Math.min(5, copy.difficulty + 1); }
+                    else if (eq === 'barbell') { copy.name = copy.name + ' (Barbell)'; copy.difficulty = Math.min(5, copy.difficulty + 1); }
+                    else if (eq === 'kettlebell') { copy.name = copy.name + ' (KB)'; copy.difficulty = Math.min(5, copy.difficulty + 1); }
+                    else if (eq === 'resistance-bands') { copy.name = copy.name + ' (Bands)'; }
+                    else if (eq === 'pull-up-bar') { copy.name = copy.name.includes('Chin') ? 'Chin-up' : copy.name + ' (Pull-up Bar)'; }
+                    return copy;
+                });
+            }
+        });
+
+        /* ====== UI wiring ====== */
+        const equipmentGrid = document.getElementById('equipmentGrid');
+        const muscleGrid = document.getElementById('muscleGrid');
+        const difficultySlider = document.getElementById('difficultySlider');
+        const generateBtn = document.getElementById('generateBtn');
+        const workoutResults = document.getElementById('workoutResults');
+        const exerciseList = document.getElementById('exerciseList');
+
+        const totalExercisesEl = document.getElementById('totalExercises');
+        const estimatedTimeEl = document.getElementById('estimatedTime');
+        const totalSetsEl = document.getElementById('totalSets');
+        const difficultyLevelEl = document.getElementById('difficultyLevel');
+
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        // Progress section mirrors
+        const globalProgressFill = document.getElementById('globalProgressFill');
+        const globalProgressText = document.getElementById('globalProgressText');
+        const progressTotalExercisesEl = document.getElementById('progressTotalExercises');
+        const progressEstimatedTimeEl = document.getElementById('progressEstimatedTime');
+        const progressTotalSetsEl = document.getElementById('progressTotalSets');
+        const progressDifficultyEl = document.getElementById('progressDifficulty');
+
+        // timer elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // track selections
+        let selectedEquipments = new Set(['bodyweight']);
+        let selectedMuscles = new Set();
+        let currentPlan = [];
+        let completedCount = 0;
+
+        function attachToggle(container, attrName, setRef) {
+            container.querySelectorAll('.option-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const key = card.getAttribute(attrName);
+                    if (!key) return;
+                    if (setRef.has(key)) {
+                        setRef.delete(key);
+                        card.classList.remove('selected');
+                    } else {
+                        setRef.add(key);
+                        card.classList.add('selected');
+                    }
+                    if (setRef === selectedEquipments && setRef.size === 0) {
+                        selectedEquipments.add('bodyweight');
+                        const el = container.querySelector('[data-equipment="bodyweight"]');
+                        if (el) el.classList.add('selected');
+                    }
+                });
+            });
+        }
+
+        attachToggle(equipmentGrid, 'data-equipment', selectedEquipments);
+        attachToggle(muscleGrid, 'data-muscle', selectedMuscles);
+        const bodyEl = equipmentGrid.querySelector('[data-equipment="bodyweight"]'); if (bodyEl) bodyEl.classList.add('selected');
+
+        function generateWorkout() {
+            const difficulty = Number(difficultySlider.value || 3);
+            difficultyLevelEl.textContent = difficulty;
+
+            let muscles = Array.from(selectedMuscles);
+            if (muscles.length === 0) muscles = ['chest','back','legs','core'];
+
+            let pool = [];
+            for (const eq of selectedEquipments) {
+                for (const m of muscles) {
+                    const entries = exerciseDatabase[eq]?.[m] ?? [];
+                    pool = pool.concat(entries.map(e => ({...e, equipment: eq, muscle: m})));
+                }
+            }
+
+            if (pool.length === 0) {
+                for (const m of muscles) {
+                    pool = pool.concat(exerciseDatabase.bodyweight[m].map(e => ({...e, equipment:'bodyweight', muscle:m})));
+                }
+            }
+
+            const targetCount = Math.min(Math.max(4, Math.round(3 + difficulty)), 8);
+            pool.sort((a,b) => Math.abs((a.difficulty||3) - difficulty) - Math.abs((b.difficulty||3) - difficulty));
+
+            const picked = [];
+            const musclesSeen = new Set();
+            for (let i=0; i<pool.length && picked.length < targetCount; i++) {
+                const e = pool[i];
+                if (!musclesSeen.has(e.muscle) || picked.length < Math.floor(targetCount/2)) {
+                    picked.push(e);
+                    musclesSeen.add(e.muscle);
+                }
+            }
+            let idx = 0;
+            while (picked.length < targetCount && idx < pool.length) {
+                if (!picked.includes(pool[idx])) picked.push(pool[idx]);
+                idx++;
+            }
+
+            currentPlan = picked.map(ex => {
+                const sets = Math.max(2, Math.round(2 + difficulty / 2));
+                const repBase = difficulty <= 2 ? 12 : difficulty <= 3 ? 10 : 6;
+                const reps = Math.max(5, Math.round(repBase - ((ex.difficulty||3) - difficulty)));
+                const rest = difficulty <= 2 ? 45 : difficulty === 3 ? 60 : 90;
+                const estMinutes = Math.max(1, Math.ceil((sets * (reps * 2 + rest)) / 60));
+                return {
+                    ...ex,
+                    sets,
+                    reps,
+                    rest,
+                    estMinutes,
+                    completed: false,
+                    id: generateId()
+                };
+            });
+
+            const totalExercises = currentPlan.length;
+            const estimatedTime = currentPlan.reduce((s,e)=>s+e.estMinutes,0);
+            const totalSets = currentPlan.reduce((s,e)=>s+e.sets,0);
+
+            totalExercisesEl.textContent = totalExercises;
+            estimatedTimeEl.textContent = estimatedTime;
+            totalSetsEl.textContent = totalSets;
+            difficultyLevelEl.textContent = difficulty;
+
+            // Update progress section mirrors
+            progressTotalExercisesEl.textContent = totalExercises;
+            progressEstimatedTimeEl.textContent = estimatedTime;
+            progressTotalSetsEl.textContent = totalSets;
+            progressDifficultyEl.textContent = difficulty;
+
+            renderPlan();
+            workoutResults.classList.add('show');
+            completedCount = 0;
+            updateProgress();
+        }
+
+        function renderPlan() {
+            exerciseList.innerHTML = '';
+            if (currentPlan.length === 0) {
+                exerciseList.innerHTML = '<div class="loading"><div>No exercises found — try changing equipment or muscles.</div></div>';
+                return;
+            }
+            currentPlan.forEach((ex, idx) => {
+                const card = document.createElement('div');
+                card.className = 'exercise-card';
+
+                card.innerHTML = `
+                    <div class="exercise-thumb" aria-hidden="true">
+                        <div style="font-weight:700; font-size:.95rem;">${escapeHtml(String(ex.equipment || '').toUpperCase())}</div>
+                        <div class="svg-wrap" role="img" aria-label="${escapeHtml(ex.name)}">
+                            <svg width="100%" height="100%" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
+                                <defs>
+                                    <linearGradient id="g${idx}" x1="0" x2="1">
+                                        <stop offset="0" stop-color="#3a3f55"/>
+                                        <stop offset="1" stop-color="#2d3748"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="0" y="0" width="100%" height="120" rx="8" fill="url(#g${idx})" />
+                                <text x="50%" y="48%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#cbd5e0">
+                                    ${escapeHtml(ex.name.length > 30 ? ex.name.slice(0,28) + '…' : ex.name)}
+                                </text>
+                                <text x="50%" y="76%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#98a3b8">
+                                    ${escapeHtml(ex.primary || '')}
+                                </text>
+                            </svg>
+                        </div>
+                        <div style="font-size:.85rem; color:#cbd5e0; margin-top:.5rem;">
+                            ${ex.difficulty <= 2 ? 'Beginner' : ex.difficulty===3 ? 'Intermediate' : 'Advanced'}
+                        </div>
+                    </div>
+                    <div class="exercise-info">
+                        <div class="exercise-name">${escapeHtml(ex.name)}</div>
+                        <div class="exercise-meta">
+                            <div class="meta-item">${ex.sets} sets</div>
+                            <div class="meta-item">${ex.reps} reps</div>
+                            <div class="meta-item">${ex.rest}s rest</div>
+                            <div class="meta-item">${ex.estMinutes} min</div>
+                        </div>
+                        <div class="exercise-description">${escapeHtml(ex.description || '')}</div>
+                        <div><strong>How:</strong> ${escapeHtml(ex.instructions || '')}</div>
+                        <div class="exercise-tips" style="margin-top:.6rem;">
+                            <div style="font-weight:600; color:#48bb78; margin-bottom:.3rem;">Tips</div>
+                            <ul class="tips-list">
+                                ${(ex.tips || []).map(t=>`<li>${escapeHtml(t)}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div style="margin-top:.7rem;">
+                            <button class="exercise-complete-btn" data-id="${ex.id}">Mark Complete</button>
+                        </div>
+                    </div>
+                `;
+
+                exerciseList.appendChild(card);
+
+                const btn = card.querySelector('.exercise-complete-btn');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        if (ex.completed) return;
+                        ex.completed = true;
+                        btn.classList.add('completed');
+                        btn.textContent = 'Completed';
+                        completedCount++;
+                        updateProgress();
+                    });
+                }
+            });
+        }
+
+        function updateProgress() {
+            const total = currentPlan.length || 1;
+            const percent = Math.round((completedCount / total) * 100);
+            progressFill.style.width = percent + '%';
+            progressText.textContent = percent + '% Complete';
+            // update mirrors
+            if (globalProgressFill) globalProgressFill.style.width = percent + '%';
+            if (globalProgressText) globalProgressText.textContent = percent + '% Complete';
+        }
+
+        generateBtn.addEventListener('click', () => {
+            if (selectedEquipments.size === 0) {
+                selectedEquipments.add('bodyweight');
+                const el = equipmentGrid.querySelector('[data-equipment="bodyweight"]');
+                if (el) el.classList.add('selected');
+            }
+            generateWorkout();
+            // scroll to results area nicely
+            const navHeight = document.querySelector('.navbar').offsetHeight + 8;
+            const top = workoutResults.getBoundingClientRect().top + window.scrollY - navHeight;
+            window.scrollTo({ top, behavior:'smooth' });
+        });
+
+        /* ====== Timer ====== */
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerRunning = false;
+
+        function formatTimer(s) {
+            const mm = String(Math.floor(s/60)).padStart(2,'0');
+            const ss = String(s%60).padStart(2,'0');
+            return `${mm}:${ss}`;
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (!timerRunning) {
+                if (timerSeconds === 0) {
+                    const mins = Math.max(1, Number(estimatedTimeEl.textContent) || 10);
+                    timerSeconds = mins * 60;
+                }
+                timerInterval = setInterval(()=> {
+                    timerSeconds--;
+                    if (timerSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        timerSeconds = 0;
+                        timerDisplay.textContent = formatTimer(timerSeconds);
+                        alert('Timer finished!');
+                        return;
+                    }
+                    timerDisplay.textContent = formatTimer(timerSeconds);
+                }, 1000);
+                timerRunning = true;
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerSeconds = 0;
+            timerDisplay.textContent = '00:00';
+        });
+
+        difficultySlider.addEventListener('keydown', (e)=> { if (e.key === 'Enter') generateBtn.click(); });
+
+        /* ====== Render Exercises Library (for #exercises) ====== */
+        function renderAllExercises() {
+            const container = document.getElementById('allExercisesList');
+            container.innerHTML = '';
+            for (const muscle of Object.keys(exerciseDatabase.bodyweight)) {
+                const block = document.createElement('div');
+                block.style.marginBottom = '.9rem';
+                block.innerHTML = `<h4 style="color:#dbeafe; margin-bottom:.45rem;">${capitalize(muscle)}</h4>`;
+                const grid = document.createElement('div');
+                grid.className = 'options-grid';
+                exerciseDatabase.bodyweight[muscle].forEach(ex => {
+                    const card = document.createElement('div');
+                    card.className = 'option-card';
+                    card.innerHTML = `<div style="font-weight:700; margin-bottom:.3rem;">${escapeHtml(ex.name)}</div><div style="font-size:.9rem;color:#a0aec0;">${escapeHtml(ex.description)}</div>`;
+                    grid.appendChild(card);
+                });
+                block.appendChild(grid);
+                container.appendChild(block);
+            }
+        }
+
+        /* ====== NAV LINKS: smooth scroll with offset for sticky navbar ====== */
+        document.querySelectorAll('.nav-links a').forEach(a => {
+            a.addEventListener('click', function(e) {
+                const href = (this.getAttribute('href') || '').trim();
+                if (href && href.startsWith('#')) {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        const navHeight = document.querySelector('.navbar').offsetHeight + 8;
+                        const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
+                        window.scrollTo({ top, behavior: 'smooth' });
+                        // accessibility focus
+                        target.setAttribute('tabindex','-1');
+                        target.focus({preventScroll:true});
+                    }
+                }
+            });
+        });
+
+        // initial demo selection + render
+        window.addEventListener('load', () => {
+            selectedMuscles.add('chest');
+            selectedMuscles.add('legs');
+            const chestEl = muscleGrid.querySelector('[data-muscle="chest"]');
+            const legsEl = muscleGrid.querySelector('[data-muscle="legs"]');
+            if (chestEl) chestEl.classList.add('selected');
+            if (legsEl) legsEl.classList.add('selected');
+
+            renderAllExercises();
+            generateWorkout();
+        });
+    </script>
+</body>
+</html>
